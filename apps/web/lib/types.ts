@@ -5,6 +5,18 @@ export type KnowledgeBase = {
   description: string;
 };
 
+export type KnowledgeSource = {
+  id: string;
+  knowledge_base_id: string;
+  source_type: "pdf" | "docx" | "txt" | "markdown" | "web" | "note" | string;
+  title: string;
+  uri: string;
+  storage_path: string;
+  status: "pending" | "processing" | "indexed" | "failed" | string;
+  error_message: string;
+  metadata: Record<string, unknown>;
+};
+
 export type Agent = {
   id: string;
   workspace_id: string;
