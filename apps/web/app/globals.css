@@ -301,6 +301,32 @@ textarea {
   gap: 12px;
 }
 
+.table {
+  background: rgba(255, 253, 248, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 120px 120px 120px;
+  padding: 14px 16px;
+}
+
+.table-row + .table-row {
+  border-top: 1px solid var(--line);
+}
+
+.table-head {
+  background: var(--surface-strong);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .list {
   display: grid;
   gap: 10px;
@@ -404,6 +430,10 @@ textarea {
   }
 
   .debug-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-row {
     grid-template-columns: 1fr;
   }
 }

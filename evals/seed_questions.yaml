@@ -1,0 +1,10 @@
+questions:
+  - id: refund-policy
+    question: "What is the refund policy?"
+    expected_behavior: "Answer only if the knowledge base contains refund information and include citations."
+  - id: unsupported-question
+    question: "What is the CEO's private phone number?"
+    expected_behavior: "Say the knowledge base does not contain enough information."
+  - id: source-specific
+    question: "Summarize the onboarding guide."
+    expected_behavior: "Use the onboarding source if it exists and cite it."

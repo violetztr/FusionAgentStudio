@@ -44,3 +44,14 @@ export type PublicAgent = {
   name: string;
   description: string;
 };
+
+export type RuntimeLog = {
+  conversation_id: string;
+  agent_name: string;
+  channel: string;
+  message_count: number;
+  last_question: string;
+  last_answer: string;
+  citation_count: number;
+  usage: Record<string, unknown>;
+};
