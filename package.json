@@ -1,0 +1,13 @@
+{
+  "name": "knowledge-fusion-agent-studio",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @studio/web dev",
+    "dev:api": "cd apps/api && uvicorn app.main:app --reload --port 8000",
+    "test:web": "pnpm --filter @studio/web test",
+    "test:api": "cd apps/api && pytest -q"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
