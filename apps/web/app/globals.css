@@ -94,6 +94,19 @@ textarea {
   padding: 32px;
 }
 
+.public-shell {
+  margin: 0 auto;
+  max-width: 980px;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.public-header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+}
+
 .page-header {
   align-items: flex-start;
   display: flex;
@@ -367,6 +380,10 @@ textarea {
   }
 
   .main {
+    padding: 22px;
+  }
+
+  .public-shell {
     padding: 22px;
   }
 

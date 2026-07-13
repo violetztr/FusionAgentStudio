@@ -38,3 +38,9 @@ export type ChatResponse = {
   citations: Array<Record<string, unknown>>;
   usage: Record<string, unknown>;
 };
+
+export type PublicAgent = {
+  public_id: string;
+  name: string;
+  description: string;
+};

@@ -55,3 +55,9 @@ class ChatResponse(BaseModel):
     answer: str
     citations: list[dict]
     usage: dict
+
+
+class PublicAgentOut(BaseModel):
+    public_id: str
+    name: str
+    description: str
