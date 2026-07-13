@@ -21,8 +21,8 @@ export default async function KnowledgeBaseDetailPage({ params }: { params: Prom
 
       <div className="source-grid">
         <SourceUpload />
-        <WebSourceForm />
-        <NoteSourceForm />
+        <WebSourceForm knowledgeBaseId={id} />
+        <NoteSourceForm knowledgeBaseId={id} />
       </div>
 
       <section className="section">
