@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -31,6 +31,16 @@ def create_note_source(
     service: SourceService = Depends(get_source_service),
 ):
     return service.create_note(knowledge_base_id, payload)
+
+
+@router.post("/api/knowledge-bases/{knowledge_base_id}/sources/file", response_model=SourceOut)
+def create_file_source(
+    knowledge_base_id: UUID,
+    title: str = Form(default=""),
+    file: UploadFile = File(...),
+    service: SourceService = Depends(get_source_service),
+):
+    return service.create_file(knowledge_base_id, title, file)
 
 
 @router.get("/api/knowledge-bases/{knowledge_base_id}/sources", response_model=list[SourceOut])

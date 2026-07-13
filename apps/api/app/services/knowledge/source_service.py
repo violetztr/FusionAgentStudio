@@ -1,7 +1,11 @@
 from uuid import UUID
+from pathlib import Path
+from uuid import uuid4
 
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.db.models import KnowledgeChunk, KnowledgeSource
 from app.schemas.source import NoteSourceCreate, WebSourceCreate
 from app.services.ingestion.indexer import ingest_source
@@ -35,6 +39,22 @@ class SourceService:
             storage_path="",
             status="pending",
             source_metadata={"content": payload.content},
+        )
+        self.db.add(source)
+        self.db.commit()
+        self.db.refresh(source)
+        return serialize_source(source)
+
+    def create_file(self, knowledge_base_id: UUID, title: str, upload: UploadFile) -> dict:
+        storage_path = _save_upload(knowledge_base_id, upload)
+        source = KnowledgeSource(
+            knowledge_base_id=knowledge_base_id,
+            source_type=_source_type_from_filename(upload.filename or ""),
+            title=title or upload.filename or "Uploaded file",
+            uri="",
+            storage_path=str(storage_path),
+            status="pending",
+            source_metadata={"filename": upload.filename or ""},
         )
         self.db.add(source)
         self.db.commit()
@@ -99,3 +119,25 @@ def serialize_chunk(chunk: KnowledgeChunk) -> dict:
         "token_count": chunk.token_count,
         "metadata": chunk.chunk_metadata,
     }
+
+
+def _save_upload(knowledge_base_id: UUID, upload: UploadFile) -> Path:
+    filename = Path(upload.filename or "source.txt").name
+    target_dir = Path(settings.file_storage_dir) / "knowledge-bases" / str(knowledge_base_id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target_path = target_dir / f"{uuid4()}_{filename}"
+    with target_path.open("wb") as target:
+        while chunk := upload.file.read(1024 * 1024):
+            target.write(chunk)
+    return target_path
+
+
+def _source_type_from_filename(filename: str) -> str:
+    suffix = Path(filename).suffix.lower()
+    if suffix == ".pdf":
+        return "pdf"
+    if suffix == ".docx":
+        return "docx"
+    if suffix in {".md", ".markdown"}:
+        return "markdown"
+    return "txt"

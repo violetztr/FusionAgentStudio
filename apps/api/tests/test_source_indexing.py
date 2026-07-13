@@ -1,6 +1,7 @@
 from uuid import uuid4
 
-from app.services.ingestion.indexer import build_indexed_chunks
+from app.db.models import KnowledgeSource
+from app.services.ingestion.indexer import build_indexed_chunks, load_source_text
 from app.services.model_gateway.types import ChatMessage, ChatResult, ModelGateway
 
 
@@ -32,3 +33,11 @@ def test_build_indexed_chunks_cleans_chunks_and_embeds_text():
     assert chunks[0].embedding == [0.0, 0.0, 1.0]
     assert "\n\n\n" not in chunks[0].content
     assert chunks[0].content_hash
+
+
+def test_load_source_text_reads_text_storage_path(tmp_path):
+    path = tmp_path / "handbook.txt"
+    path.write_text("Refund policy from a file", encoding="utf-8")
+    source = KnowledgeSource(source_type="txt", storage_path=str(path), source_metadata={})
+
+    assert load_source_text(source) == "Refund policy from a file"

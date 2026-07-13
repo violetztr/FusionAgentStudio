@@ -22,6 +22,12 @@ class FakeSourceService:
         self.sources[source["id"]] = source
         return source
 
+    def create_file(self, knowledge_base_id: UUID, title: str, upload):
+        source = self._source(knowledge_base_id, "txt", title, "")
+        source["storage_path"] = f"/tmp/{upload.filename}"
+        self.sources[source["id"]] = source
+        return source
+
     def list_by_knowledge_base(self, knowledge_base_id: UUID):
         return [item for item in self.sources.values() if item["knowledge_base_id"] == knowledge_base_id]
 
@@ -80,6 +86,21 @@ def test_create_web_source():
 
     assert response.status_code == 200
     assert response.json()["uri"] == "https://example.com/docs"
+
+
+def test_create_file_source():
+    client, _ = make_client()
+    knowledge_base_id = uuid4()
+
+    response = client.post(
+        f"/api/knowledge-bases/{knowledge_base_id}/sources/file",
+        data={"title": "Handbook"},
+        files={"file": ("handbook.txt", b"File knowledge", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["source_type"] == "txt"
+    assert response.json()["storage_path"] == "/tmp/handbook.txt"
 
 
 def test_list_sources_for_knowledge_base():

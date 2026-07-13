@@ -8,7 +8,7 @@ from app.db.models import KnowledgeChunk, KnowledgeSource
 from app.db.session import SessionLocal
 from app.services.ingestion.chunking import chunk_text
 from app.services.ingestion.cleaning import clean_text
-from app.services.ingestion.parsers import parse_web_url
+from app.services.ingestion.parsers import parse_docx, parse_markdown, parse_pdf, parse_text, parse_web_url
 from app.services.model_gateway.factory import get_model_gateway
 from app.services.model_gateway.types import ModelGateway
 
@@ -67,7 +67,7 @@ def ingest_source(source_id: str, db: Session | None = None, gateway: ModelGatew
         source.error_message = ""
         session.flush()
 
-        raw_text = _load_source_text(source)
+        raw_text = load_source_text(source)
         drafts = build_indexed_chunks(
             source_id=source.id,
             knowledge_base_id=source.knowledge_base_id,
@@ -109,11 +109,26 @@ def _content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
-def _load_source_text(source: KnowledgeSource) -> str:
+def load_source_text(source: KnowledgeSource) -> str:
     if source.source_type == "note":
         return str(source.source_metadata.get("content", ""))
     if source.source_type == "web":
         return parse_web_url(source.uri)
     if source.storage_path:
-        return source.storage_path
+        return _load_file_text(source)
     raise ValueError(f"Unsupported source type: {source.source_type}")
+
+
+def _load_file_text(source: KnowledgeSource) -> str:
+    from pathlib import Path
+
+    path = Path(source.storage_path)
+    if source.source_type == "pdf" or path.suffix.lower() == ".pdf":
+        return parse_pdf(path)
+    if source.source_type == "docx" or path.suffix.lower() == ".docx":
+        return parse_docx(path)
+    if source.source_type == "markdown" or path.suffix.lower() in {".md", ".markdown"}:
+        return parse_markdown(path)
+    if source.source_type == "txt" or path.suffix.lower() in {".txt", ".text"}:
+        return parse_text(path)
+    raise ValueError(f"Unsupported file source type: {source.source_type}")

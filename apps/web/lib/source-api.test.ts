@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { createNoteSource, createWebSource, reindexSource } from "./source-api";
+import { createFileSource, createNoteSource, createWebSource, reindexSource } from "./source-api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -35,6 +35,23 @@ describe("source api", () => {
         method: "POST",
       }),
     );
+  });
+
+  test("createFileSource posts multipart file data to a knowledge base", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ id: "source-1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const file = new File(["File knowledge"], "handbook.txt", { type: "text/plain" });
+
+    await createFileSource("kb-1", { title: "Handbook", file });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/knowledge-bases/kb-1/sources/file",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(init?.body).toBeInstanceOf(FormData);
+    expect((init?.body as FormData).get("title")).toBe("Handbook");
+    expect((init?.body as FormData).get("file")).toBe(file);
   });
 
   test("reindexSource starts indexing for a source", async () => {
