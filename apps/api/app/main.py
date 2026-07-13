@@ -7,6 +7,7 @@ from app.routes.health import router as health_router
 from app.routes.knowledge_bases import router as knowledge_base_router
 from app.routes.public_chat import router as public_chat_router
 from app.routes.runtime_logs import router as runtime_log_router
+from app.routes.sources import router as source_router
 
 
 app = FastAPI(title="Knowledge Fusion Agent Studio API")
@@ -25,3 +26,4 @@ app.include_router(health_router)
 app.include_router(knowledge_base_router)
 app.include_router(public_chat_router)
 app.include_router(runtime_log_router)
+app.include_router(source_router)

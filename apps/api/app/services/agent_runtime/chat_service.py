@@ -6,6 +6,7 @@ from app.db.models import Agent, Conversation, Message, RuntimeTrace
 from app.schemas.agent import ChatResponse
 from app.services.agent_runtime.runtime import run_agent_answer
 from app.services.model_gateway.factory import get_model_gateway
+from app.services.retrieval.service import RetrievalService
 
 
 class ChatService:
@@ -22,7 +23,7 @@ class ChatService:
         self.db.add(user_message)
         self.db.flush()
 
-        retrieval_results = []
+        retrieval_results = RetrievalService(self.db).retrieve_for_agent(agent.id, message, int(agent.top_k))
         runtime_result = run_agent_answer(
             gateway=get_model_gateway(),
             agent_prompt=agent.system_prompt,
@@ -41,6 +42,27 @@ class ChatService:
         )
         self.db.add(assistant_message)
         self.db.flush()
+        self.db.add(
+            RuntimeTrace(
+                conversation_id=conversation.id,
+                message_id=assistant_message.id,
+                agent_id=agent.id,
+                trace_type="retrieval",
+                payload={
+                    "query": message,
+                    "chunks": [
+                        {
+                            "chunk_id": str(result.chunk_id),
+                            "source_id": str(result.source_id),
+                            "source_title": result.source_title,
+                            "chunk_index": result.chunk_index,
+                            "score": result.score,
+                        }
+                        for result in retrieval_results
+                    ],
+                },
+            )
+        )
         self.db.add(
             RuntimeTrace(
                 conversation_id=conversation.id,
