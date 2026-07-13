@@ -153,6 +153,12 @@ textarea {
   grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
 }
 
+.debug-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.8fr);
+}
+
 .builder-column {
   display: grid;
   gap: 14px;
@@ -224,6 +230,62 @@ textarea {
   display: flex;
   gap: 10px;
   justify-content: space-between;
+}
+
+.chat-thread {
+  display: grid;
+  gap: 10px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.message {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.message[data-role="user"] {
+  background: #f1f7f5;
+}
+
+.message[data-role="assistant"] {
+  background: white;
+}
+
+.message-role {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.chat-composer {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.citation-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.citation {
+  background: #f7f5ef;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.trace-stack {
+  display: grid;
+  gap: 12px;
 }
 
 .list {
@@ -321,6 +383,10 @@ textarea {
   }
 
   .builder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .debug-grid {
     grid-template-columns: 1fr;
   }
 }
