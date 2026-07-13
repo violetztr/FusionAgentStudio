@@ -147,6 +147,17 @@ textarea {
   margin-bottom: 24px;
 }
 
+.builder-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
+}
+
+.builder-column {
+  display: grid;
+  gap: 14px;
+}
+
 .panel {
   background: rgba(255, 253, 248, 0.88);
   border: 1px solid var(--line);
@@ -165,6 +176,14 @@ textarea {
   gap: 10px;
 }
 
+.field-label {
+  color: var(--muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+}
+
 .input,
 .textarea {
   background: white;
@@ -179,6 +198,32 @@ textarea {
 .textarea {
   min-height: 94px;
   resize: vertical;
+}
+
+.range-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto;
+}
+
+.toggle-row,
+.checkbox-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.checkbox-list {
+  display: grid;
+  gap: 10px;
+}
+
+.status-line {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
 }
 
 .list {
@@ -272,6 +317,10 @@ textarea {
   }
 
   .source-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-grid {
     grid-template-columns: 1fr;
   }
 }
