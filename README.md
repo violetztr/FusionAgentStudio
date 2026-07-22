@@ -1,99 +1,108 @@
 # Knowledge Fusion Agent Studio（知识融合智能体工作室）
 
-多知识源 AI 智能体构建平台。支持将文档、网页、笔记等知识来源摄入知识库，将知识库绑定到可配置的智能体，并通过带引用和运行时追踪的调试聊天进行验证。
+## 项目描述
+
+基于 Python 构建 AI Agent 学习与实验平台，实现 ReAct Agent、Tool Calling、RAG、MCP、Memory、Streaming 等核心能力，覆盖 Agent 生命周期及工程化实践。
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 前端 | Next.js、React、TypeScript |
-| 后端 | FastAPI、Python、SQLAlchemy、Alembic |
-| 数据库 | PostgreSQL + pgvector（向量存储） |
-| 任务队列 | Redis + Celery（异步摄入任务） |
-| 模型层 | OpenAI 兼容的 Chat / Embedding API 网关 |
+Python、FastAPI、Next.js、TypeScript、PostgreSQL + pgvector、Redis、Celery、SQLAlchemy、Alembic、OpenAI API、MCP、Function Calling、Streaming、RAG
+
+## 项目亮点
+
+- 实现 ReAct Agent 主循环，支持 Thought → Action → Observation → Final Answer 推理流程，基于 OpenAI Function Calling 驱动工具调用决策，最大迭代次数可配置。
+- 基于 OpenAI Function Calling 封装 Tool Registry（工具注册中心），支持动态工具注册、JSON Schema 参数校验（类型校验、枚举约束、默认值填充），提供统一的 `to_openai_schema()` 格式转换。
+- 内置多种 Agent Tool：知识库混合检索工具（向量 + 关键词融合）、数学计算器工具、日期时间工具，支持按 Agent 动态绑定知识库搜索。
+- 基于 PostgreSQL + pgvector 实现 Agent Memory，Conversation、Message、RuntimeTrace 完整持久化，支持对话历史追溯与运行时追踪回放。
+- 基于 FastAPI + SSE（Server-Sent Events）实现 Agent Streaming 输出，流式推送 thought / action / observation / final_answer / done 等事件，支持前端实时渲染 Agent 推理过程。
+- 集成 MCP Tool Server，实现 Tool Discovery 与 Tool Calling，遵循 Model Context Protocol 规范，对外暴露工具发现与调用接口，Agent 可注册为 MCP 服务供外部客户端消费。
+- 实现完整 RAG 流程，覆盖文本解析（PDF/DOCX/TXT/Markdown/网页/笔记 6 种来源）→ 清洗 → 分块（可配置重叠窗口）→ Embedding 向量化 → pgvector IVFFlat 索引存储 → 混合检索（向量余弦相似度 0.7 + 关键词 CJK n-gram 0.3 融合去重）。
+- 封装 OpenAI 兼容模型网关（Model Gateway），抽象 Chat / Embedding / ChatWithTools 接口，ChatMessage 支持 tool_calls / tool_call_id 完整 Function Calling 语义，实现模型层与业务层解耦。
+- 基于 Redis + Celery 实现异步知识摄入任务队列，支持大文件/多来源并行处理，状态机管理 `pending → indexing → indexed/failed` 生命周期。
+- 编写 20 个测试文件（50+ 用例），覆盖 Tool Registry、内置工具、MCP Server、混合检索合并、提示构建、引用生成、知识库/来源/Agent CRUD、ReAct 聊天等核心模块。
 
 ## 项目结构
 
 ```
 FusionAgentStudio/
 ├── apps/
-│   ├── api/                    # FastAPI 后端
+│   ├── api/                              # FastAPI 后端
 │   │   ├── app/
-│   │   │   ├── core/           # 配置管理
-│   │   │   ├── db/             # 数据库模型与会话
-│   │   │   ├── routes/         # API 路由（健康检查、知识库、来源、智能体、聊天、运行时日志）
-│   │   │   ├── schemas/        # Pydantic 数据模型
-│   │   │   ├── services/       # 业务逻辑层
-│   │   │   │   ├── agent/      # 智能体管理
-│   │   │   │   ├── agent_runtime/ # 智能体运行时（聊天、引用、提示构建）
-│   │   │   │   ├── ingestion/  # 知识摄入（解析、清洗、分块、索引）
-│   │   │   │   ├── knowledge/  # 知识库与来源管理
-│   │   │   │   ├── logs/       # 运行时日志
-│   │   │   │   ├── model_gateway/ # 模型网关（OpenAI 兼容）
-│   │   │   │   └── retrieval/  # 混合检索（向量 + 关键词）
-│   │   │   └── workers/        # Celery 异步任务
-│   │   ├── alembic/            # 数据库迁移
-│   │   └── tests/              # 后端单元测试
-│   └── web/                    # Next.js 前端
-│       ├── app/
-│       │   ├── (dashboard)/    # 仪表盘页面（知识库、智能体、运行时日志）
-│       │   └── chat/[publicId]/ # 公开聊天页面
-│       └── components/         # UI 组件
-├── docs/                       # 项目文档
-├── evals/                      # 评测种子问题
-├── infra/postgres/             # 数据库初始化脚本
-├── docker-compose.yml          # Docker 本地服务编排
-├── pnpm-workspace.yaml         # pnpm monorepo 配置
-└── package.json                # 根项目脚本
+│   │   │   ├── core/config.py            # 配置管理
+│   │   │   ├── db/                       # ORM 模型 + 会话管理（10 张表）
+│   │   │   ├── routes/                   # API 路由（含 react-chat / SSE streaming / MCP）
+│   │   │   ├── schemas/                  # Pydantic 数据模型
+│   │   │   ├── services/
+│   │   │   │   ├── agent/                # Agent CRUD + 发布管理
+│   │   │   │   ├── agent_runtime/        # 运行时引擎
+│   │   │   │   │   ├── react_agent.py    # ReAct 主循环
+│   │   │   │   │   ├── react_streaming.py # ReAct 流式版本
+│   │   │   │   │   ├── react_chat_service.py # ReAct 聊天服务
+│   │   │   │   │   └── ...               # chat / prompt / citations
+│   │   │   │   ├── ingestion/            # 摄入管道（parsers/cleaning/chunking/indexer）
+│   │   │   │   ├── model_gateway/        # 模型网关（OpenAI 兼容 + Function Calling）
+│   │   │   │   ├── retrieval/            # 混合检索（hybrid merge）
+│   │   │   │   └── tools/                # 工具系统
+│   │   │   │       ├── types.py          # ToolDefinition / ToolParameter / ToolCall
+│   │   │   │       ├── registry.py       # ToolRegistry（注册/校验/执行）
+│   │   │   │       ├── builtin.py        # 内置工具（搜索/计算器/日期时间）
+│   │   │   │       └── mcp_server.py     # MCP Tool Server
+│   │   │   └── workers/                  # Celery 异步任务
+│   │   ├── alembic/                      # 数据库迁移
+│   │   └── tests/                        # 20 个测试文件
+│   └── web/                              # Next.js 前端
+│       ├── app/(dashboard)/              # 仪表盘
+│       ├── app/chat/[publicId]/          # 公开聊天
+│       └── components/                   # UI 组件
+├── docs/                                 # 项目文档
+├── evals/                                # 评测种子数据
+├── docker-compose.yml                    # Docker 本地服务
+└── pnpm-workspace.yaml                   # Monorepo 配置
 ```
 
-## MVP 功能
+## 核心 API
 
-- **知识库管理**：创建知识库，支持 PDF、DOCX、TXT、Markdown、网页 URL、手动笔记等多种来源
-- **知识摄入管道**：解析 → 清洗 → 分块 → 向量化 → 存储，状态可追踪
-- **混合检索**：向量搜索 + 关键词搜索 + 结果合并去重
-- **智能体构建**：配置角色、系统提示词、模型参数、绑定知识库、引用策略
-- **调试聊天**：实时问答，带引用标注和检索追踪面板
-- **发布与分享**：一键发布为公开聊天页面
-- **可观测性**：摄入状态监控、运行时追踪、模型用量统计
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/agents/{id}/react-chat` | POST | ReAct Agent 同步聊天（含 Tool Calling） |
+| `/api/agents/{id}/react-chat/stream` | POST | ReAct Agent SSE 流式聊天 |
+| `/api/mcp/agents/{id}/server-info` | GET | MCP 服务端信息 |
+| `/api/mcp/agents/{id}/tools` | GET | MCP Tool Discovery（工具发现） |
+| `/api/mcp/agents/{id}/tools/{name}/call` | POST | MCP Tool Calling（工具调用） |
+| `/api/agents/{id}/debug-chat` | POST | 原有 RAG 调试聊天 |
+| `/api/public/agents/{public_id}/chat` | POST | 公开聊天 |
 
-## 本地服务
-
-启动 PostgreSQL 和 Redis：
+## 本地运行
 
 ```bash
+# 启动基础服务
 docker compose up -d postgres redis
-```
 
-## 开发命令
+# 安装依赖
+pnpm install
+cd apps/api && pip install -e .
 
-```bash
-# 前端开发
-pnpm dev:web
+# 数据库迁移
+cd apps/api && alembic upgrade head
 
-# 后端开发
-pnpm dev:api
+# 开发模式
+pnpm dev:api    # 后端 http://localhost:8000
+pnpm dev:web    # 前端 http://localhost:3000
 
-# 前端测试
-pnpm test:web
-
-# 后端测试
+# 测试
 pnpm test:api
+pnpm test:web
 ```
 
 ## 环境变量
 
-复制 `.env.example` 为 `.env`，按需配置：
+复制 `.env.example` 为 `.env`，配置模型 API：
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `database_url` | 数据库连接串 | `postgresql+psycopg://studio:studio@localhost:5432/studio` |
+| `database_url` | PostgreSQL 连接串 | `postgresql+psycopg://studio:studio@localhost:5432/studio` |
 | `redis_url` | Redis 连接串 | `redis://localhost:6379/0` |
 | `model_base_url` | 模型 API 地址 | `https://api.openai.com/v1` |
-| `model_api_key` | 模型 API 密钥 | - |
+| `model_api_key` | API 密钥 | - |
 | `chat_model` | 对话模型 | `gpt-4.1-mini` |
-| `embedding_model` | 向量化模型 | `text-embedding-3-small` |
-
-## 实施计划
-
-详见 [`docs/superpowers/plans/2026-07-13-knowledge-fusion-agent-studio.md`](docs/superpowers/plans/2026-07-13-knowledge-fusion-agent-studio.md)。
+| `embedding_model` | 嵌入模型 | `text-embedding-3-small` |
